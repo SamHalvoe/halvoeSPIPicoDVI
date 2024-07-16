@@ -16,12 +16,23 @@ namespace halvoeDVI::AtPico
   // Pico DVI Sock ('pico_sock_cfg').
   DVIGFX8 dviGFX(DVI_RES_320x240p60, true, adafruit_feather_dvi_cfg);
 
-  const pin_size_t SPI_DEFAULT_PIN_RX = D12;
-  const pin_size_t SPI_DEFAULT_PIN_CS = D13;
-  const pin_size_t SPI_DEFAULT_PIN_SCK = D10;
-  const pin_size_t SPI_DEFAULT_PIN_TX = D11;
+  constexpr const pin_size_t SPI_DEFAULT_PIN_RX = D12;
+  constexpr const pin_size_t SPI_DEFAULT_PIN_CS = D13;
+  constexpr const pin_size_t SPI_DEFAULT_PIN_SCK = D10;
+  constexpr const pin_size_t SPI_DEFAULT_PIN_TX = D11;
 
   constexpr const size_t CANVAS_SIZE = 240 * 320;
+  constexpr const uint16_t COLOR_COUNT = 256;
+
+  void setupDefaultPalette()
+  {
+    for (uint16_t index = 0; index < COLOR_COUNT; ++index)
+    {
+      dviGFX.setColor(index, index, index, index);
+    }
+
+    dviGFX.swap(false, true); // Duplicate same palette into front & back buffers
+  }
 
   void receiveCallback(uint8_t* in_data, size_t in_size)
   {
@@ -46,37 +57,33 @@ namespace halvoeDVI::AtPico
     private:
       SPISlaveClass& m_spiInterface;
 
-    private:
-      void setupDefaultPalette()
-      {
-        for (uint16_t index = 0; index < g_colorCount; ++index)
-        {
-          m_dviGFX.setColor(index, index, index, index);
-        }
-
-        m_dviGFX.swap(false, true); // Duplicate same palette into front & back buffers
-      }
-
     public:
-      SPILink(SPISlaveClass& io_spiInterface) : m_spiInterface(io_spiInterface)
+      SPILink(SPISlaveClass& io_spiInterface = SPISlave1) : m_spiInterface(io_spiInterface)
+      {}
+
+      // These set methods panic the core, if set to invalid pins!!!
+      bool setPins(pin_size_t in_rx, pin_size_t in_cs, pin_size_t in_sck, pin_size_t in_tx)
       {
-        setPins(SPI_DEFAULT_PIN_RX, SPI_DEFAULT_PIN_CS, SPI_DEFAULT_PIN_SCK, SPI_DEFAULT_PIN_TX);
-        m_spiInterface.onDataRecv(receiveCallback);
-        //m_spiInterface.onDataSent(sentCallback);
+        if (not m_spiInterface.setRX(in_rx)) { return false; }
+        if (not m_spiInterface.setCS(in_cs)) { return false; }
+        if (not m_spiInterface.setSCK(in_sck)) { return false; }
+        if (not m_spiInterface.setTX(in_tx)) { return false; }
+        return true;
       }
 
-      void setPins(pin_size_t in_rx, pin_size_t in_cs, pin_size_t in_sck, pin_size_t in_tx)
+      bool setDefaultPins()
       {
-        m_spiInterface.setRX(in_rx);
-        m_spiInterface.setCS(in_cs);
-        m_spiInterface.setSCK(in_sck);
-        m_spiInterface.setTX(in_tx);
+        return setPins(SPI_DEFAULT_PIN_RX, SPI_DEFAULT_PIN_CS, SPI_DEFAULT_PIN_SCK, SPI_DEFAULT_PIN_TX);
       }
 
       bool begin(const SPISettings& in_settings = SPI_DEFAULT_SETTINGS)
       {
         if (not dviGFX.begin()) { return false; }
         setupDefaultPalette();
+        
+        if (not setDefaultPins()) { return false; }
+        m_spiInterface.onDataRecv(receiveCallback);
+        //m_spiInterface.onDataSent(sentCallback);
         m_spiInterface.begin(in_settings);
 
         return true;

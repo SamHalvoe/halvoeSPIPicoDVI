@@ -1,6 +1,7 @@
+#include "halvoeInfo.hpp"
 #include "halvoeAtPicoDVI.hpp"
 
-halvoeDVI::AtPico::SPILink spiLink(SPISlave);
+halvoeDVI::AtPico::SPILink spiLink;
 
 void setup()
 {
@@ -9,12 +10,16 @@ void setup()
   #ifdef HALVOE_DVI_DEBUG
     Serial.begin(115200);
     while (not Serial) { delay(1000); }
-    Serial.println("gpu serial to usb ready");
+    Serial.println("PicoDVI Serial to USB is ready.");
+    Serial.print("Build Version: ");
+    Serial.println(halvoeDVI::buildVersion);
+    Serial.print("Build Timestamp: ");
+    Serial.println(halvoeDVI::buildTimestamp);
   #endif // HALVOE_DVI_DEBUG
 
   if (not spiLink.begin())
   {
-    while (true) { digitalWrite(LED_BUILTIN, HIGH); delay(250); digitalWrite(LED_BUILTIN, LOW); }
+    while (true) { digitalWrite(LED_BUILTIN, HIGH); delay(250); digitalWrite(LED_BUILTIN, LOW); delay(250); }
   }
 }
 
