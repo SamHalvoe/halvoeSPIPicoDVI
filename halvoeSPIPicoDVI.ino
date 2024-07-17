@@ -1,4 +1,3 @@
-#include "halvoeInfo.hpp"
 #include "halvoeAtPicoDVI.hpp"
 
 halvoeDVI::AtPico::SPILink spiLink;
@@ -21,6 +20,10 @@ void setup()
   {
     while (true) { digitalWrite(LED_BUILTIN, HIGH); delay(250); digitalWrite(LED_BUILTIN, LOW); delay(250); }
   }
+
+  #ifdef HALVOE_DVI_DEBUG
+    Serial.println("PicoDVI leaves setup().");
+  #endif // HALVOE_DVI_DEBUG
 }
 
 void loop()
