@@ -18,7 +18,7 @@ namespace halvoeDVI::AtHost
       SPILink(HALVOE_SPI_CLASS& io_spiInterface = HALVOE_SPI_DEFAULT) : m_spiInterface(io_spiInterface)
       {}
 
-      bool begin(const SPISettings& in_spiSettings = SPI_DEFAULT_SETTINGS)
+      void begin(const SPISettings& in_spiSettings = SPI_DEFAULT_SETTINGS)
       {
         m_spiSettings = in_spiSettings;
         m_spiInterface.begin();

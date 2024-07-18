@@ -11,9 +11,6 @@
   #error halvoeDVI::AtPico does only work on RP2040!
 #endif
 
-#define DEFAULT_SPI_SLAVE_INSTANCE SPISlave
-#define USED_SPI_SLAVE_INSTANCE DEFAULT_SPI_SLAVE_INSTANCE
-
 namespace halvoeDVI::AtPico::Callback
 {
   void onReceive(uint8_t* in_data, size_t in_size);
@@ -29,11 +26,6 @@ namespace halvoeDVI::AtPico
   // for boards like the Pimoroni Pico DV (use 'pimoroni_demo_hdmi_cfg') or
   // Pico DVI Sock ('pico_sock_cfg').
   DVIGFX8 dviGFX(DVI_RES_320x240p60, true, adafruit_feather_dvi_cfg);
-
-  constexpr const pin_size_t SPI_DEFAULT_PIN_RX = 8;//12;
-  constexpr const pin_size_t SPI_DEFAULT_PIN_CS = 9;//13;
-  constexpr const pin_size_t SPI_DEFAULT_PIN_SCK = 10;
-  constexpr const pin_size_t SPI_DEFAULT_PIN_TX = 11;
 
   void setupDefaultPalette()
   {
@@ -63,46 +55,46 @@ namespace halvoeDVI::AtPico
     dviGFX.swap();
   }
 
-  class SPILink
+  bool beginDVI()
   {
-    private:
-      SPISlaveClass& m_spiInterface;
+    if (not dviGFX.begin()) { return false; }
+    dviGFX.cp437(true);
+    setupDefaultPalette();
+    printVersion();
 
-    public:
-      SPILink(SPISlaveClass& io_spiInterface = USED_SPI_SLAVE_INSTANCE) : m_spiInterface(io_spiInterface)
-      {}
+    return true;
+  }
 
-      // These set methods panic the core, if set to invalid pins!!!
-      bool setPins(pin_size_t in_rx, pin_size_t in_cs, pin_size_t in_sck, pin_size_t in_tx)
-      {
-        if (not m_spiInterface.setRX(in_rx)) { return false; }
-        if (not m_spiInterface.setCS(in_cs)) { return false; }
-        if (not m_spiInterface.setSCK(in_sck)) { return false; }
-        if (not m_spiInterface.setTX(in_tx)) { return false; }
-        return true;
-      }
+  constexpr const pin_size_t SPI_DEFAULT_PIN_RX = 12;
+  constexpr const pin_size_t SPI_DEFAULT_PIN_CS = 13;
+  constexpr const pin_size_t SPI_DEFAULT_PIN_SCK = 10;
+  constexpr const pin_size_t SPI_DEFAULT_PIN_TX = 11;
 
-      bool setDefaultPins()
-      {
-        return setPins(SPI_DEFAULT_PIN_RX, SPI_DEFAULT_PIN_CS, SPI_DEFAULT_PIN_SCK, SPI_DEFAULT_PIN_TX);
-      }
+  // These set methods panic the core, if set to invalid pins!!!
+  bool setPins(pin_size_t in_rx, pin_size_t in_cs, pin_size_t in_sck, pin_size_t in_tx)
+  {
+    if (not SPISlave.setRX(in_rx)) { return false; }
+    if (not SPISlave.setCS(in_cs)) { return false; }
+    if (not SPISlave.setSCK(in_sck)) { return false; }
+    if (not SPISlave.setTX(in_tx)) { return false; }
+    return true;
+  }
 
-      bool begin(const SPISettings& in_spiSettings = SPI_DEFAULT_SETTINGS)
-      {
-        if (not dviGFX.begin()) { return false; }
-        dviGFX.cp437(true);
-        setupDefaultPalette();
-        printVersion();
-        
-        if (not setDefaultPins()) { return false; }
-        Callback::onSent();
-        m_spiInterface.onDataRecv(Callback::onReceive);
-        m_spiInterface.onDataSent(Callback::onSent);
-        //m_spiInterface.begin(in_spiSettings);
+  bool setDefaultPins()
+  {
+    return setPins(SPI_DEFAULT_PIN_RX, SPI_DEFAULT_PIN_CS, SPI_DEFAULT_PIN_SCK, SPI_DEFAULT_PIN_TX);
+  }
 
-        return true;
-      }
-  };
+  bool beginSPI(const SPISettings& in_spiSettings = SPI_DEFAULT_SETTINGS)
+  {
+    if (not setDefaultPins()) { return false; }
+    Callback::onSent();
+    SPISlave.onDataRecv(Callback::onReceive);
+    SPISlave.onDataSent(Callback::onSent);
+    SPISlave.begin(in_spiSettings);
+
+    return true;
+  }
 }
 
 namespace halvoeDVI::AtPico::Callback
@@ -111,11 +103,19 @@ namespace halvoeDVI::AtPico::Callback
 
   void onReceive(uint8_t* in_data, size_t in_size)
   {
+    Serial.println("onReceive");
+    Serial.println(in_size);
+
     if (onReceiveBufferOffset >= FRAME_SIZE)
     {
       onReceiveBufferOffset = 0;
       dviGFX.swap();
     }
+    
+    /*if (in_size > 0)
+    {
+      Serial.println(in_data[0]);
+    }*/
 
     std::memcpy(dviGFX.getBuffer() + onReceiveBufferOffset, in_data, in_size);
 
@@ -125,11 +125,12 @@ namespace halvoeDVI::AtPico::Callback
     }
   }
 
-  uint8_t onSentBuffer[8];
+  uint8_t onSentBuffer[64];
 
   void onSent()
   {
-    memset(onSentBuffer, 0, sizeof(onSentBuffer));
-    USED_SPI_SLAVE_INSTANCE.setData(onSentBuffer, sizeof(onSentBuffer));
+    Serial.println("onSent");
+    std::memset(onSentBuffer, 4, sizeof(onSentBuffer));
+    SPISlave.setData(onSentBuffer, sizeof(onSentBuffer));
   }
 }

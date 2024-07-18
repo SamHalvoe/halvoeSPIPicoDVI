@@ -1,14 +1,12 @@
 #include "halvoeAtPicoDVI.hpp"
 
-halvoeDVI::AtPico::SPILink spiLink;
-
 void setup()
 {
   pinMode(LED_BUILTIN, OUTPUT);
 
   #ifdef HALVOE_DVI_DEBUG
     Serial.begin(115200);
-    while (not Serial) { delay(1000); }
+    while (not Serial) { delay(500); }
     Serial.println("PicoDVI Serial to USB is ready.");
     Serial.print("Build Version: ");
     Serial.println(halvoeDVI::buildVersion);
@@ -16,7 +14,12 @@ void setup()
     Serial.println(halvoeDVI::buildTimestamp);
   #endif // HALVOE_DVI_DEBUG
 
-  if (not spiLink.begin())
+  if (not halvoeDVI::AtPico::beginDVI())
+  {
+    while (true) { digitalWrite(LED_BUILTIN, HIGH); delay(250); digitalWrite(LED_BUILTIN, LOW); delay(250); }
+  }
+
+  if (not halvoeDVI::AtPico::beginSPI())
   {
     while (true) { digitalWrite(LED_BUILTIN, HIGH); delay(250); digitalWrite(LED_BUILTIN, LOW); delay(250); }
   }
