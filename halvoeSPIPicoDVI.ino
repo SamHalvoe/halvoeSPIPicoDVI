@@ -27,6 +27,8 @@ void setup()
   #ifdef HALVOE_DVI_DEBUG
     Serial.println("PicoDVI leaves setup().");
   #endif // HALVOE_DVI_DEBUG
+
+  halvoeDVI::AtPico::writeIsDVIReady(true);
 }
 
 void loop()

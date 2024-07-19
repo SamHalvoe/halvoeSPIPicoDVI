@@ -16,8 +16,10 @@
 
 namespace halvoeDVI
 {
-  constexpr const size_t FRAME_SIZE = 240 * 320;
-  constexpr const uint16_t COLOR_COUNT = 256;
+  const size_t FRAME_HEIGHT = 240;
+  const size_t FRAME_WIDTH = 320;
+  const size_t FRAME_SIZE = FRAME_HEIGHT * FRAME_WIDTH;
+  const uint16_t COLOR_COUNT = 256;
 
-  const SPISettings SPI_DEFAULT_SETTINGS(1000000, MSBFIRST, SPI_MODE0);
+  const SPISettings SPI_DEFAULT_SETTINGS(24000000, MSBFIRST, SPI_MODE3);
 }
