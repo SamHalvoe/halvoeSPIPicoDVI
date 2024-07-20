@@ -16,11 +16,23 @@ void setup()
 
   if (not halvoeDVI::AtPico::beginDVI())
   {
+    #ifdef HALVOE_DVI_DEBUG
+      Serial.println("beginDVI() failed!");
+    #endif // HALVOE_DVI_DEBUG
     while (true) { digitalWrite(LED_BUILTIN, HIGH); delay(250); digitalWrite(LED_BUILTIN, LOW); delay(250); }
   }
+  
+  #ifdef HALVOE_DVI_DEBUG
+    Serial.print("CPU frequency: ");
+    Serial.print(rp2040.f_cpu());
+    Serial.println(" hz");
+  #endif // HALVOE_DVI_DEBUG
 
   if (not halvoeDVI::AtPico::beginSPI())
   {
+    #ifdef HALVOE_DVI_DEBUG
+      Serial.println("beginSPI() failed!");
+    #endif // HALVOE_DVI_DEBUG
     while (true) { digitalWrite(LED_BUILTIN, HIGH); delay(250); digitalWrite(LED_BUILTIN, LOW); delay(250); }
   }
 
@@ -28,6 +40,7 @@ void setup()
     Serial.println("PicoDVI leaves setup().");
   #endif // HALVOE_DVI_DEBUG
 
+  halvoeDVI::AtPico::setupDVIIsReadyPin();
   halvoeDVI::AtPico::writeIsDVIReady(true);
 }
 

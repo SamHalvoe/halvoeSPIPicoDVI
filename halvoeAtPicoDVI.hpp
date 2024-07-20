@@ -59,19 +59,12 @@ namespace halvoeDVI::AtPico
 
   bool beginDVI()
   {
-    pinMode(IS_DVI_READY_PIN, OUTPUT);
-    
     if (not dviGFX.begin()) { return false; }
     dviGFX.cp437(true);
     setupDefaultPalette();
     printVersion();
 
     return true;
-  }
-
-  void writeIsDVIReady(bool in_isReady)
-  {
-    digitalWrite(IS_DVI_READY_PIN, in_isReady ? HIGH : LOW);
   }
 
   const pin_size_t SPI_DEFAULT_PIN_RX = 12;
@@ -103,6 +96,16 @@ namespace halvoeDVI::AtPico
     SPISlave.begin(in_spiSettings);
 
     return true;
+  }
+
+  void setupDVIIsReadyPin()
+  {
+    pinMode(IS_DVI_READY_PIN, OUTPUT);
+  }
+
+  void writeIsDVIReady(bool in_isReady)
+  {
+    digitalWrite(IS_DVI_READY_PIN, in_isReady ? HIGH : LOW);
   }
 }
 

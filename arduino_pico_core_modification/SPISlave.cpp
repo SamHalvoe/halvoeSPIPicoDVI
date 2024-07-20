@@ -219,7 +219,7 @@ void SPISlaveClass::begin(SPISettings spis) {
     spi_init(_spi, spis.getClockFreq());
     DEBUGSPI("SPISlave: actual baudrate=%u\n", spi_get_baudrate(_spi));
     spi_set_slave(_spi, true);
-    spi_set_format(_spi, 8, cpol(spis),	cpha(spis), SPI_MSB_FIRST);
+    spi_set_format(_spi, 8, cpol(spis), cpha(spis), SPI_MSB_FIRST);
 
     // Install our IRQ handler
     if (_spi == spi0) {
