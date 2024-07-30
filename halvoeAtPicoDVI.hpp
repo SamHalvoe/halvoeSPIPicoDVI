@@ -1,22 +1,14 @@
-#include "Arduino.h"
 #pragma once
 
-#include <cstring>
 #include <PicoDVI.h>
-#include <SPISlave.h>
 
 #include "halvoeInfo.hpp"
 #include "halvoeSPIPicoDVI.hpp"
+#include "halvoePioSPI/halvoePioSPI.hpp"
 
 #ifndef ARDUINO_ARCH_RP2040
   #error halvoeDVI::AtPico does only work on RP2040!
 #endif
-
-namespace halvoeDVI::AtPico::Callback
-{
-  void onReceive(uint8_t* in_data, size_t in_size);
-  void onSent();
-}
 
 namespace halvoeDVI::AtPico
 {
@@ -67,38 +59,26 @@ namespace halvoeDVI::AtPico
     return true;
   }
 
-  const pin_size_t SPI_DEFAULT_PIN_RX = 12;
-  const pin_size_t SPI_DEFAULT_PIN_CS = 13;
-  const pin_size_t SPI_DEFAULT_PIN_SCK = 10;
-  const pin_size_t SPI_DEFAULT_PIN_TX = 11;
+  const pin_size_t SPI_DEFAULT_PIN_RX = 10;
+  const pin_size_t SPI_DEFAULT_PIN_CS = 12;
+  const pin_size_t SPI_DEFAULT_PIN_SCK = 11;
+  const pin_size_t SPI_DEFAULT_PIN_TX = 9;
+  int stateMachine = -1;
 
-  // These set methods panic the core, if set to invalid pins!!!
-  bool setPins(pin_size_t in_rx, pin_size_t in_cs, pin_size_t in_sck, pin_size_t in_tx)
+  void handleDmaIrq()
   {
-    if (not SPISlave.setRX(in_rx)) { return false; }
-    if (not SPISlave.setCS(in_cs)) { return false; }
-    if (not SPISlave.setSCK(in_sck)) { return false; }
-    if (not SPISlave.setTX(in_tx)) { return false; }
-    return true;
+    dviGFX.swap();
+    clear_dma_interrupt_request();
+    restart_dma_channel(dviGFX.getBuffer());
   }
 
-  bool setDefaultPins()
+  bool beginSPI()
   {
-    return setPins(SPI_DEFAULT_PIN_RX, SPI_DEFAULT_PIN_CS, SPI_DEFAULT_PIN_SCK, SPI_DEFAULT_PIN_TX);
+    stateMachine = setupPioSPI(pio1, SPI_DEFAULT_PIN_RX, dviGFX.getBuffer(), FRAME_SIZE, handleDmaIrq);
+    return stateMachine != -1;
   }
 
-  bool beginSPI(const SPISettings& in_spiSettings = SPI_DEFAULT_SETTINGS)
-  {
-    if (not setDefaultPins()) { return false; }
-    Callback::onSent();
-    SPISlave.onDataRecv(Callback::onReceive);
-    SPISlave.onDataSent(Callback::onSent);
-    SPISlave.begin(in_spiSettings);
-
-    return true;
-  }
-
-  void setupDVIIsReadyPin()
+  void setupIsDVIReadyPin()
   {
     pinMode(IS_DVI_READY_PIN, OUTPUT);
   }
@@ -106,30 +86,5 @@ namespace halvoeDVI::AtPico
   void writeIsDVIReady(bool in_isReady)
   {
     digitalWrite(IS_DVI_READY_PIN, in_isReady ? HIGH : LOW);
-  }
-}
-
-namespace halvoeDVI::AtPico::Callback
-{
-  size_t onReceiveBufferOffset = 0;
-
-  void onReceive(uint8_t* in_data, size_t in_size)
-  {
-    std::memcpy(dviGFX.getBuffer() + onReceiveBufferOffset, in_data, in_size);
-    onReceiveBufferOffset = onReceiveBufferOffset + in_size;
-
-    if (onReceiveBufferOffset >= FRAME_SIZE)
-    {
-      onReceiveBufferOffset = 0;
-      dviGFX.swap();
-    }
-  }
-
-  uint8_t onSentBuffer[64];
-
-  void onSent()
-  {
-    std::memset(onSentBuffer, 4, sizeof(onSentBuffer));
-    SPISlave.setData(onSentBuffer, sizeof(onSentBuffer));
   }
 }

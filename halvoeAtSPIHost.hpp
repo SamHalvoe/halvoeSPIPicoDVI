@@ -24,8 +24,8 @@ namespace halvoeDVI::AtHost
       void begin(const SPISettings& in_spiSettings = SPI_DEFAULT_SETTINGS)
       {
         pinMode(IS_DVI_READY_PIN, INPUT);
-        pinMode(CS_PIN, OUTPUT);
-        digitalWriteFast(CS_PIN, HIGH);
+        //pinMode(CS_PIN, OUTPUT);
+        //digitalWriteFast(CS_PIN, HIGH);
         m_spiSettings = in_spiSettings;
         m_spiInterface.begin();
       }
@@ -38,9 +38,9 @@ namespace halvoeDVI::AtHost
       void transferFrame(const GFXcanvas8& in_frame)
       {
         m_spiInterface.beginTransaction(m_spiSettings);
-        digitalWriteFast(CS_PIN, LOW);
+        //digitalWriteFast(CS_PIN, LOW);
         m_spiInterface.transfer(in_frame.getBuffer(), nullptr, FRAME_SIZE);
-        digitalWriteFast(CS_PIN, HIGH);
+        //digitalWriteFast(CS_PIN, HIGH);
         m_spiInterface.endTransaction();
       }
   };

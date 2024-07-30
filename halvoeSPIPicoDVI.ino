@@ -21,12 +21,6 @@ void setup()
     #endif // HALVOE_DVI_DEBUG
     while (true) { digitalWrite(LED_BUILTIN, HIGH); delay(250); digitalWrite(LED_BUILTIN, LOW); delay(250); }
   }
-  
-  #ifdef HALVOE_DVI_DEBUG
-    Serial.print("CPU frequency: ");
-    Serial.print(rp2040.f_cpu());
-    Serial.println(" hz");
-  #endif // HALVOE_DVI_DEBUG
 
   if (not halvoeDVI::AtPico::beginSPI())
   {
@@ -37,14 +31,26 @@ void setup()
   }
 
   #ifdef HALVOE_DVI_DEBUG
+    Serial.print("CPU frequency: ");
+    Serial.print(rp2040.f_cpu());
+    Serial.println(" hz");
+    Serial.print("Free heap: ");
+    Serial.print(rp2040.getFreeHeap());
+    Serial.println(" bytes");
+    Serial.print("Free stack: ");
+    Serial.print(rp2040.getFreeStack());
+    Serial.println(" bytes");
+  #endif // HALVOE_DVI_DEBUG
+
+  #ifdef HALVOE_DVI_DEBUG
     Serial.println("PicoDVI leaves setup().");
   #endif // HALVOE_DVI_DEBUG
 
-  halvoeDVI::AtPico::setupDVIIsReadyPin();
+  halvoeDVI::AtPico::setupIsDVIReadyPin();
   halvoeDVI::AtPico::writeIsDVIReady(true);
 }
 
 void loop()
 {
-  // receiving and transfering via SPI is handled by callbacks - so nothing to do here
+  // nothing do to here - interrupt handles buffer swapping
 }
