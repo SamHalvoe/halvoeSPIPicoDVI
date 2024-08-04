@@ -4,6 +4,7 @@
 
 #include "halvoeInfo.hpp"
 #include "halvoeSPIPicoDVI.hpp"
+#include "GFXController.hpp"
 #include "halvoePioSPI/halvoePioSPI.hpp"
 
 #ifndef ARDUINO_ARCH_RP2040
@@ -65,16 +66,21 @@ namespace halvoeDVI::AtPico
   const pin_size_t SPI_DEFAULT_PIN_TX = 9;
   int stateMachine = -1;
 
-  void handleDmaIrq()
+  volatile bool isCSTriggered = false;
+  GFXController gfxController(dviGFX);
+
+  void __time_critical_func(handleCSIrq)()
   {
-    dviGFX.swap();
-    clear_dma_interrupt_request();
-    restart_dma_channel(dviGFX.getBuffer());
+    isCSTriggered = true;
+    gfxController.swapCommandBuffers();
+    halvoePioSPI::restart_dma_channel(gfxController.getReceiveBuffer().data(), COMMAND_BUFFER_SIZE);
   }
 
   bool beginSPI()
   {
-    stateMachine = setupPioSPI(pio1, SPI_DEFAULT_PIN_RX, dviGFX.getBuffer(), FRAME_SIZE, handleDmaIrq);
+    pinMode(SPI_DEFAULT_PIN_CS, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(SPI_DEFAULT_PIN_CS), handleCSIrq, RISING);
+    stateMachine = halvoePioSPI::setup(pio1, SPI_DEFAULT_PIN_RX, gfxController.getReceiveBuffer().data(), COMMAND_BUFFER_SIZE);
     return stateMachine != -1;
   }
 

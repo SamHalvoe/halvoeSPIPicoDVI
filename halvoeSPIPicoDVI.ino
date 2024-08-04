@@ -52,5 +52,9 @@ void setup()
 
 void loop()
 {
-  // nothing do to here - interrupt handles buffer swapping
+  if (halvoeDVI::AtPico::isCSTriggered)
+  {
+    halvoeDVI::AtPico::gfxController.executeFromBuffer();
+    halvoeDVI::AtPico::isCSTriggered = false;
+  }
 }

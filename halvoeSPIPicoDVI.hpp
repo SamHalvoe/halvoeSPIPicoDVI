@@ -21,5 +21,42 @@ namespace halvoeDVI
   const size_t FRAME_SIZE = FRAME_HEIGHT * FRAME_WIDTH;
   const uint16_t COLOR_COUNT = 256;
 
+  const size_t COMMAND_BUFFER_SIZE = 16384; // in bytes (CommandBuffer uses uint8_t)
   const SPISettings SPI_DEFAULT_SETTINGS(24000000, MSBFIRST, SPI_MODE0);
+
+  enum class GFXCommand : uint16_t
+  {
+    invalid = 0,
+    swap,
+    fillScreen,
+    fillRect
+  };
+
+  GFXCommand toGFXCommand(uint16_t in_value)
+  {
+    switch (static_cast<GFXCommand>(in_value))
+    {
+      case GFXCommand::invalid:
+      case GFXCommand::swap:
+      case GFXCommand::fillScreen:
+      case GFXCommand::fillRect:
+        return static_cast<GFXCommand>(in_value);
+    }
+
+    return GFXCommand::invalid;
+  }
+
+  uint16_t fromGFXCommand(GFXCommand in_command)
+  {
+    switch (in_command)
+    {
+      case GFXCommand::invalid:
+      case GFXCommand::swap:
+      case GFXCommand::fillScreen:
+      case GFXCommand::fillRect:
+        return static_cast<uint16_t>(in_command);
+    }
+
+    return static_cast<uint16_t>(GFXCommand::invalid);
+  }
 }
