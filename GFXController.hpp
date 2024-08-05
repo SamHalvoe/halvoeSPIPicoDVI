@@ -1,57 +1,12 @@
 #pragma once
 
-#include <type_traits>
-#include <array>
 #include <PicoDVI.h>
 
+#include "halvoeDVIUtility.hpp"
 #include "halvoeSPIPicoDVI.hpp"
 
 namespace halvoeDVI::AtPico
 {
-  template<size_t in_arraySize>
-  class ByteArrayView
-  {
-    private:
-      uint8_t* m_begin = nullptr;
-      uint8_t* m_end = nullptr;
-      const size_t m_size = 0;
-
-    public:
-      ByteArrayView(std::array<uint8_t, in_arraySize>& in_array, size_t in_viewSize, size_t in_offset = 0) :
-        m_begin(in_array.data() + in_offset),
-        m_end(in_array.data() + in_offset + in_viewSize + 1), // + 1 for past the end "iterator"
-        m_size(in_viewSize)
-      {
-        // ToDo: Add debug message! assert(in_offset + in_viewSize <= in_arraySize, "in_viewSize must be less than or equal to in_arraySize!");
-        // ToDo: Add debug message! assert(m_begin < m_end, "m_begin must be less than m_end!");
-      }
-
-      size_t getSize() const
-      {
-        return m_size;
-      }
-
-      uint8_t getByte()
-      {
-        if (m_begin + sizeof(uint8_t) > m_end) { return 0; }
-
-        uint8_t value = *m_begin;
-        ++m_begin;
-        return value;
-      }
-
-      template<typename Type>
-      Type getAs()
-      {
-        static_assert(std::is_arithmetic<Type>::value, "Type must be arithmetic!");
-        if (m_begin + sizeof(Type) > m_end) { return 0; }
-        
-        Type value = *reinterpret_cast<Type*>(m_begin);
-        m_begin = m_begin + sizeof(Type);
-        return value;
-      }
-  };
-
   class GFXController
   {
     private:
@@ -129,6 +84,14 @@ namespace halvoeDVI::AtPico
       void executeFromBuffer()
       {
         CommandBufferView bufferView = createCommandBufferView();
+        /*Serial.println(*reinterpret_cast<uint16_t*>(getExecuteBuffer().data()));
+        Serial.println(*reinterpret_cast<uint16_t*>(getExecuteBuffer().data() + 2));
+        Serial.println(*reinterpret_cast<uint16_t*>(getExecuteBuffer().data() + 4));
+        Serial.println("....");
+        Serial.println(bufferView.getAs<uint16_t>());
+        Serial.println(bufferView.getAs<uint16_t>());
+        Serial.println(bufferView.getAs<uint16_t>());
+        Serial.println("----");*/
         
         switch (getCommand(bufferView))
         {
