@@ -11,7 +11,7 @@ namespace halvoeDVI::AtPico
   {
     private:
       using CommandBuffer = std::array<uint8_t, COMMAND_BUFFER_SIZE>;
-      using CommandBufferView = ByteArrayView<COMMAND_BUFFER_SIZE>;
+      using CommandBufferReader = ByteArrayReader<COMMAND_BUFFER_SIZE>;
 
     private:
       DVIGFX8& m_dviGFX;
@@ -25,40 +25,24 @@ namespace halvoeDVI::AtPico
         return m_commandBuffers[m_executeBufferIndex];
       }
 
-      uint16_t getBufferViewSize()
-      {
-        return reinterpret_cast<uint16_t*>(getExecuteBuffer().data())[0];
-      }
-
-      CommandBufferView createCommandBufferView()
-      {
-        // the sizeof(uint16_t) offset is for the two bytes of getBufferViewSize()
-        return CommandBufferView(getExecuteBuffer(), getBufferViewSize(), sizeof(uint16_t));
-      }
-
-      GFXCommand getCommand(CommandBufferView& in_view)
-      {
-        return toGFXCommand(in_view.getAs<uint16_t>());
-      }
-
       void swap()
       {
         m_dviGFX.swap();
       }
 
-      void fillScreen(CommandBufferView& in_view)
+      void fillScreen(CommandBufferReader& in_reader)
       {
-        uint16_t color = in_view.getAs<uint16_t>();
+        uint16_t color = in_reader.read<uint16_t>();
         m_dviGFX.fillScreen(color);
       }
 
-      void fillRect(CommandBufferView& in_view)
+      void fillRect(CommandBufferReader& in_reader)
       {
-        int16_t x = in_view.getAs<int16_t>();
-        int16_t y = in_view.getAs<int16_t>();
-        int16_t width = in_view.getAs<int16_t>();
-        int16_t height = in_view.getAs<int16_t>();
-        uint16_t color = in_view.getAs<uint16_t>();
+        int16_t x = in_reader.read<int16_t>();
+        int16_t y = in_reader.read<int16_t>();
+        int16_t width = in_reader.read<int16_t>();
+        int16_t height = in_reader.read<int16_t>();
+        uint16_t color = in_reader.read<uint16_t>();
         m_dviGFX.fillRect(x, y, width, height, color);
       }
 
@@ -83,22 +67,23 @@ namespace halvoeDVI::AtPico
 
       void executeFromBuffer()
       {
-        CommandBufferView bufferView = createCommandBufferView();
+        CommandBufferReader bufferReader = CommandBufferReader(getExecuteBuffer());
+        bufferReader.read<uint16_t>(); // read size of command, do not care at this moment
         /*Serial.println(*reinterpret_cast<uint16_t*>(getExecuteBuffer().data()));
         Serial.println(*reinterpret_cast<uint16_t*>(getExecuteBuffer().data() + 2));
         Serial.println(*reinterpret_cast<uint16_t*>(getExecuteBuffer().data() + 4));
         Serial.println("....");
-        Serial.println(bufferView.getAs<uint16_t>());
-        Serial.println(bufferView.getAs<uint16_t>());
-        Serial.println(bufferView.getAs<uint16_t>());
+        Serial.println(bufferReader.read<uint16_t>());
+        Serial.println(bufferReader.read<uint16_t>());
+        Serial.println(bufferReader.read<uint16_t>());
         Serial.println("----");*/
         
-        switch (getCommand(bufferView))
+        switch (toGFXCommand(bufferReader.read<uint16_t>()))
         {
           case GFXCommand::invalid: /* ToDo: Add debug message! */ break;
           case GFXCommand::swap: swap(); break;
-          case GFXCommand::fillScreen: fillScreen(bufferView); break;
-          case GFXCommand::fillRect: fillRect(bufferView); break;
+          case GFXCommand::fillScreen: fillScreen(bufferReader); break;
+          case GFXCommand::fillRect: fillRect(bufferReader); break;
         }
       }
   };
