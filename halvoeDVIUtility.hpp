@@ -80,6 +80,11 @@ namespace halvoeDVI
       {
         return m_cursor;
       }
+
+      void resetCursor()
+      {
+        m_cursor = 0;
+      }
       
       bool isCursorAtEnd() const
       {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GFXCmdSerialzer.hpp"
+#include "GFXCmdSerializer.hpp"
 #include "halvoeSPIPicoDVI.hpp"
 
 namespace halvoeDVI::AtHost
@@ -20,20 +20,21 @@ namespace halvoeDVI::AtHost
       HALVOE_SPI_CLASS& m_spiInterface;
       SPISettings m_spiSettings;
       CommandBuffer m_commandBuffer;
+      GFXCmdSerializer m_cmdSerializer;
 
     private:
-      void transferCommand(uint16_t in_commandSize)
+      void transferFrame(uint16_t in_frameSize)
       {
         m_spiInterface.beginTransaction(m_spiSettings);
         digitalWriteFast(CS_PIN, LOW);
-        m_spiInterface.transfer(m_commandBuffer.data(), nullptr, in_commandSize);
+        m_spiInterface.transfer(m_commandBuffer.data(), nullptr, in_frameSize);
         digitalWriteFast(CS_PIN, HIGH);
         m_spiInterface.endTransaction();
       }
 
     public:
       SPILink(HALVOE_SPI_CLASS& io_spiInterface = HALVOE_SPI_DEFAULT) :
-        m_spiInterface(io_spiInterface)
+        m_spiInterface(io_spiInterface), m_cmdSerializer(m_commandBuffer)
       {}
 
       void begin(const SPISettings& in_spiSettings = SPI_DEFAULT_SETTINGS)
@@ -50,37 +51,14 @@ namespace halvoeDVI::AtHost
         return digitalReadFast(IS_DVI_READY_PIN) == HIGH;
       }
       
-      void swap()
+      GFXCmdSerializer& getGFXCmdSerializer()
       {
-        CommandBufferWriter commandBufferWriter(m_commandBuffer);
-        commandBufferWriter.skip<uint16_t>(); // field for size, will be written at the end
-        commandBufferWriter.write<uint16_t>(fromGFXCommand(GFXCommand::swap));
-        commandBufferWriter.writeAt<uint16_t>(commandBufferWriter.getCursor() - 2, 0); // field for size
-        transferCommand(commandBufferWriter.getCursor());
+        return m_cmdSerializer;
       }
 
-      void fillScreen(uint16_t in_color)
+      void sendFrame()
       {
-        CommandBufferWriter commandBufferWriter(m_commandBuffer);
-        commandBufferWriter.skip<uint16_t>(); // field for size, will be written at the end
-        commandBufferWriter.write<uint16_t>(fromGFXCommand(GFXCommand::fillScreen));
-        commandBufferWriter.write<uint16_t>(in_color);
-        commandBufferWriter.writeAt<uint16_t>(commandBufferWriter.getCursor() - 2, 0); // field for size
-        transferCommand(commandBufferWriter.getCursor());
-      }
-
-      void fillRect(int16_t in_x, int16_t in_y, int16_t in_width, int16_t in_height, uint16_t in_color)
-      {
-        CommandBufferWriter commandBufferWriter(m_commandBuffer);
-        commandBufferWriter.skip<uint16_t>(); // field for size, will be written at the end
-        commandBufferWriter.write<uint16_t>(fromGFXCommand(GFXCommand::fillRect));
-        commandBufferWriter.write<int16_t>(in_x);
-        commandBufferWriter.write<int16_t>(in_y);
-        commandBufferWriter.write<int16_t>(in_width);
-        commandBufferWriter.write<int16_t>(in_height);
-        commandBufferWriter.write<uint16_t>(in_color);
-        commandBufferWriter.writeAt<uint16_t>(commandBufferWriter.getCursor() - 2, 0); // field for size
-        transferCommand(commandBufferWriter.getCursor());
+        transferFrame(m_cmdSerializer.getFrameSize());
       }
   };
 #else
