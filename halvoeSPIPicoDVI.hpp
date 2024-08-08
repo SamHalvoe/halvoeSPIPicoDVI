@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <SPI.h>
 
 #ifdef ARDUINO_ARCH_RP2040
@@ -23,6 +24,8 @@ namespace halvoeDVI
 
   const size_t COMMAND_BUFFER_SIZE = 16384; // in bytes (CommandBuffer uses uint8_t)
   const SPISettings SPI_DEFAULT_SETTINGS(24000000, MSBFIRST, SPI_MODE0);
+
+  using CommandBuffer = std::array<uint8_t, COMMAND_BUFFER_SIZE>;
 
   enum class GFXCommand : uint16_t
   {

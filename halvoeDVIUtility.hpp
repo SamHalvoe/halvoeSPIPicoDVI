@@ -6,7 +6,7 @@
 
 namespace halvoeDVI
 {
-  template<size_t c_arraySize>
+  template<size_t c_arraySize, size_t c_cursorOffset = 0>
   class ByteArrayReader
   {
     private:
@@ -15,10 +15,9 @@ namespace halvoeDVI
 
     public:
       ByteArrayReader(const std::array<uint8_t, c_arraySize>& in_array, size_t in_offset = 0) :
-        m_begin(in_array.data()),
-        m_cursor(in_offset)
+        m_begin(in_array.data()), m_cursor(c_cursorOffset)
       {
-        // ToDo: Add debug message! assert(m_cursor < c_arraySize, "m_cursor must be less than c_arraySize!");
+        static_assert(c_cursorOffset < c_arraySize, "Cursor offset must be less than array size!");
       }
 
       constexpr size_t getSize() const
@@ -31,13 +30,10 @@ namespace halvoeDVI
         return m_cursor;
       }
 
-      uint8_t readByte()
+      template<typename Type>
+      void skip()
       {
-        if (m_cursor + sizeof(uint8_t) > c_arraySize) { return 0; } // ToDo: add debug message!
-        
-        uint8_t value = *(m_begin + m_cursor);
-        ++m_cursor;
-        return value;
+        m_cursor = m_cursor + sizeof(Type);
       }
 
       template<typename Type>
@@ -50,9 +46,18 @@ namespace halvoeDVI
         m_cursor = m_cursor + sizeof(Type);
         return value;
       }
+
+      template<typename Type>
+      Type readAt(size_t in_index)
+      {
+        static_assert(std::is_arithmetic<Type>::value, "Type must be arithmetic!");
+        if (in_index + sizeof(Type) > c_arraySize) { return 0; } // ToDo: add debug message!
+        
+        return *reinterpret_cast<const Type*>(m_begin + in_index);
+      }
   };
 
-  template<size_t c_arraySize>
+  template<size_t c_arraySize, size_t c_cursorOffset = 0>
   class ByteArrayWriter
   {
     private:
@@ -60,10 +65,10 @@ namespace halvoeDVI
       size_t m_cursor = 0;
 
     public:
-      ByteArrayWriter(std::array<uint8_t, c_arraySize>& in_array, size_t in_offset = 0) :
-        m_begin(in_array.data()), m_cursor(in_offset)
+      ByteArrayWriter(std::array<uint8_t, c_arraySize>& in_array) :
+        m_begin(in_array.data()), m_cursor(c_cursorOffset)
       {
-        // ToDo: Add debug message! assert(m_cursor < c_arraySize, "m_cursor must be less than c_arraySize!");
+        static_assert(c_cursorOffset < c_arraySize, "Cursor offset must be less than array size!");
       }
 
       constexpr size_t getSize() const
@@ -75,22 +80,41 @@ namespace halvoeDVI
       {
         return m_cursor;
       }
-
-      void writeByte(uint8_t in_byte)
+      
+      bool isCursorAtEnd() const
       {
-        if (m_cursor + sizeof(uint8_t) > c_arraySize) { return; } // ToDo: add debug message!
-        *(m_begin + m_cursor) = in_byte;
-        ++m_cursor;
+        return getCursor() == getSize();
       }
 
       template<typename Type>
-      void write(Type in_value)
+      bool skip()
       {
         static_assert(std::is_arithmetic<Type>::value, "Type must be arithmetic!");
-        if (m_cursor + sizeof(Type) > c_arraySize) { return; } // ToDo: add debug message!
+        if (m_cursor + sizeof(Type) > c_arraySize) { return false; }
+
+        m_cursor = m_cursor + sizeof(Type);
+        return true;
+      }
+
+      template<typename Type>
+      bool write(Type in_value)
+      {
+        static_assert(std::is_arithmetic<Type>::value, "Type must be arithmetic!");
+        if (m_cursor + sizeof(Type) > c_arraySize) { return false; }
 
         *reinterpret_cast<Type*>(m_begin + m_cursor) = in_value;
         m_cursor = m_cursor + sizeof(Type);
+        return true;
+      }
+
+      template<typename Type>
+      bool writeAt(Type in_value, size_t in_index)
+      {
+        static_assert(std::is_arithmetic<Type>::value, "Type must be arithmetic!");
+        if (in_index + sizeof(Type) > c_arraySize) { return false; }
+
+        *reinterpret_cast<Type*>(m_begin + in_index) = in_value;
+        return true;
       }
   };
 }
