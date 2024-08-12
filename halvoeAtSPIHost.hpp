@@ -66,7 +66,7 @@ namespace halvoeDVI::AtHost
       {
         ByteArrayReader<COMMAND_BUFFER_SIZE> frameReader(m_commandBuffer);
         String frameDump;
-        concatCount = 0;
+        size_t concatCount = 0;
 
         while (frameReader.getCursor() < m_cmdSerializer.getFrameSize())
         {
