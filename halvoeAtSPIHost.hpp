@@ -64,7 +64,7 @@ namespace halvoeDVI::AtHost
       // for debugging
       void dumpFrame()
       {
-        ByteArrayReader frameReader<COMMAND_BUFFER_SIZE>(m_commandBuffer);
+        ByteArrayReader<COMMAND_BUFFER_SIZE> frameReader(m_commandBuffer);
         String frameDump;
         concatCount = 0;
 
@@ -72,7 +72,7 @@ namespace halvoeDVI::AtHost
         {
           frameDump.concat(String(frameReader.read<uint16_t>(), HEX));
           ++concatCount;
-          if (concatCount % 32 == 0) { frameDump.concat('\n') }
+          if (concatCount % 32 == 0) { frameDump.concat('\n'); }
         }
 
         Serial.println(frameDump);
