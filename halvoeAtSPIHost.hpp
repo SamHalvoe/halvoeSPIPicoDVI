@@ -71,6 +71,7 @@ namespace halvoeDVI::AtHost
         while (frameReader.getCursor() < m_cmdSerializer.getFrameSize())
         {
           frameDump.concat(String(frameReader.read<uint16_t>(), HEX));
+          frameDump.concat(' ');
           ++concatCount;
           if (concatCount % 32 == 0) { frameDump.concat('\n'); }
         }

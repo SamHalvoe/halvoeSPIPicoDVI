@@ -9,11 +9,11 @@ namespace halvoeDVI::AtHost
   {
     public:
       using CommandBufferWriter = ByteArrayWriter<COMMAND_BUFFER_SIZE>;
-      using GFXCmdSizeType = uint16_t;
+      using GFXCmdSize_t = uint16_t;
 
-      const uint16_t GFXCmdTag = ( 's' << 8 ) + ( 'h' >> 8 ); // magic serialization tag
+      const uint16_t GFXCmdTag = 0b111001101100001; // magic serialization tag -> 's' and 'h' in ascii
       const uint16_t GFXCmdVersion = 1; // serialization format version
-      const uint16_t GFXCmdSizeLength = sizeof(GFXCmdSizeType);
+      const uint16_t GFXCmdSizeLength = sizeof(GFXCmdSize_t);
 
     private:
       CommandBufferWriter m_writer;
@@ -21,13 +21,13 @@ namespace halvoeDVI::AtHost
     private:
       void beginCommand(GFXCommand in_command)
       {
-        m_writer.skip<GFXCmdSizeType>(); // field for size command, will be written at the end
+        m_writer.skip<GFXCmdSize_t>(); // field for size command, will be written in endCommand()
         m_writer.write<uint16_t>(fromGFXCommand(in_command));
       }
 
       void endCommand()
       {
-        m_writer.writeAt<GFXCmdSizeType>(m_writer.getCursor() - GFXCmdSizeLength, 0); // field for size command
+        m_writer.writeAt<GFXCmdSize_t>(m_writer.getCursor() - GFXCmdSizeLength, 0); // field for size command
       }
 
       void addSwap()
