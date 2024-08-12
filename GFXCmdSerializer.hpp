@@ -52,6 +52,11 @@ namespace halvoeDVI::AtHost
         m_writer.write<uint16_t>(GFXCmdVersion);
       }
 
+      void endFrame()
+      {
+        addSwap();
+      }
+
       void addFillScreen(uint16_t in_color)
       {
         beginCommand(GFXCommand::fillScreen);
@@ -68,11 +73,6 @@ namespace halvoeDVI::AtHost
         m_writer.write<int16_t>(in_height);
         m_writer.write<uint16_t>(in_color);
         endCommand();
-      }
-
-      void endFrame()
-      {
-        addSwap();
-      }
+      }      
   };
 }

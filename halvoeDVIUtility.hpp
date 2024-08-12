@@ -30,10 +30,31 @@ namespace halvoeDVI
         return m_cursor;
       }
 
-      template<typename Type>
-      void skip()
+      void resetCursor()
       {
+        m_cursor = 0;
+      }
+
+      bool isInBounds(size_t in_size) const
+      {
+        return m_cursor + in_size <= c_arraySize;
+      }
+
+      template<typename Type>
+      bool isInBounds() const
+      {
+        static_assert(std::is_arithmetic<Type>::value, "Type must be arithmetic!");
+        return m_cursor + sizeof(Type) <= c_arraySize;
+      }
+
+      template<typename Type>
+      bool skip()
+      {
+        static_assert(std::is_arithmetic<Type>::value, "Type must be arithmetic!");
+        if (m_cursor + sizeof(Type) > c_arraySize) { return false; }
+
         m_cursor = m_cursor + sizeof(Type);
+        return true;
       }
 
       template<typename Type>
@@ -85,10 +106,17 @@ namespace halvoeDVI
       {
         m_cursor = 0;
       }
-      
-      bool isCursorAtEnd() const
+
+      bool isInBounds(size_t in_size) const
       {
-        return getCursor() == getSize();
+        return m_cursor + in_size <= c_arraySize;
+      }
+      
+      template<typename Type>
+      bool isInBounds() const
+      {
+        static_assert(std::is_arithmetic<Type>::value, "Type must be arithmetic!");
+        return m_cursor + sizeof(Type) <= c_arraySize;
       }
 
       template<typename Type>

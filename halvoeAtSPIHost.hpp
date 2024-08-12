@@ -60,6 +60,23 @@ namespace halvoeDVI::AtHost
       {
         transferFrame(m_cmdSerializer.getFrameSize());
       }
+
+      // for debugging
+      void dumpFrame()
+      {
+        ByteArrayReader frameReader<COMMAND_BUFFER_SIZE>(m_commandBuffer);
+        String frameDump;
+        concatCount = 0;
+
+        while (frameReader.getCursor() < m_cmdSerializer.getFrameSize())
+        {
+          frameDump.concat(String(frameReader.read<uint16_t>(), HEX));
+          ++concatCount;
+          if (concatCount % 32 == 0) { frameDump.concat('\n') }
+        }
+
+        Serial.println(frameDump);
+      }
   };
 #else
   #error Unsupported MCU!

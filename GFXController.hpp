@@ -65,26 +65,29 @@ namespace halvoeDVI::AtPico
         m_receiveBufferIndex = newReceiveBufferIndex;
       }
 
-      void executeFromBuffer()
+      bool executeFromBuffer()
       {
         CommandBufferReader bufferReader = CommandBufferReader(getExecuteBuffer());
-        bufferReader.read<uint16_t>(); // read size of command, do not care at this moment
-        /*Serial.println(*reinterpret_cast<uint16_t*>(getExecuteBuffer().data()));
-        Serial.println(*reinterpret_cast<uint16_t*>(getExecuteBuffer().data() + 2));
-        Serial.println(*reinterpret_cast<uint16_t*>(getExecuteBuffer().data() + 4));
-        Serial.println("....");
-        Serial.println(bufferReader.read<uint16_t>());
-        Serial.println(bufferReader.read<uint16_t>());
-        Serial.println(bufferReader.read<uint16_t>());
-        Serial.println("----");*/
-        
-        switch (toGFXCommand(bufferReader.read<uint16_t>()))
+        bufferReader.read<uint16_t>(); // GFXCmdTag
+        bufferReader.read<uint16_t>(); // GFXCmdVersion
+
+        while (bufferReader.isInBounds<uint16_t>())
         {
-          case GFXCommand::invalid: /* ToDo: Add debug message! */ break;
-          case GFXCommand::swap: swap(); break;
-          case GFXCommand::fillScreen: fillScreen(bufferReader); break;
-          case GFXCommand::fillRect: fillRect(bufferReader); break;
+          switch (toGFXCommand(bufferReader.read<uint16_t>()))
+          {
+            case GFXCommand::invalid:
+              /* ToDo: Add debug message! */
+              return false;
+            case GFXCommand::swap: swap();
+              return true;
+            
+            case GFXCommand::fillScreen: fillScreen(bufferReader); break;
+            case GFXCommand::fillRect: fillRect(bufferReader);     break;
+          }
         }
+
+        /* ToDo: Add debug message! */
+        return false;
       }
   };
 }
