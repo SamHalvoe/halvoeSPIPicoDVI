@@ -13,7 +13,7 @@ namespace halvoeDVI::AtHost
 
       const uint16_t GFXCmdTag = 0b111001101100001; // magic serialization tag -> 's' and 'h' in ascii
       const uint16_t GFXCmdVersion = 1; // serialization format version
-      const uint16_t GFXCmdSizeLength = sizeof(GFXCmdSize_t);
+      const size_t GFXCmdSizeLength = sizeof(GFXCmdSize_t);
 
     private:
       CommandBufferWriter m_writer;
@@ -21,13 +21,16 @@ namespace halvoeDVI::AtHost
     private:
       void beginCommand(GFXCommand in_command)
       {
+        // todo: save cursor -> command begin
         m_writer.skip<GFXCmdSize_t>(); // field for size command, will be written in endCommand()
         m_writer.write<uint16_t>(fromGFXCommand(in_command));
       }
 
       void endCommand()
       {
-        m_writer.writeAt<GFXCmdSize_t>(m_writer.getCursor() - GFXCmdSizeLength, 0); // field for size command
+        Serial.println("endCommand()");
+        Serial.println(m_writer.getCursor());
+        m_writer.writeAt<GFXCmdSize_t>(m_writer.getCursor() - GFXCmdSizeLength, /* todo: use saved cursor from beginCommand (see comment there) */0); // field for size command
       }
 
       void addSwap()
